@@ -1,0 +1,68 @@
+[
+  {
+    "id": "index_page_title",
+    "translation": "Paprastas asmeninių finansų tvarkymas"
+  },
+  {
+    "id": "not_found",
+    "translation": "404 Nerasta"
+  },
+  {
+    "id": "not_found_message",
+    "translation": "Šis puslapis nerastas"
+  },
+  {
+    "id": "accounts",
+    "translation": "Sąskaitos"
+  },
+
+  {
+    "id": "add_income",
+    "translation": "Pridėti pajamas"
+  },
+
+  {
+    "id": "add_expense",
+    "translation": "Pridėti išlaidas"
+  },
+  {
+    "id": "journal",
+    "translation": "Žurnalas"
+  },
+  {
+    "id": "reports",
+    "translation": "Ataskaitos"
+  },
+  {
+    "id": "about",
+    "translation": "Apie"
+  },
+  {
+    "id": "balance_sheet",
+    "translation": "Balansas"
+  },
+  {
+    "id": "timeline",
+    "translation": "Chronologija"
+  },
+  {
+    "id": "by_category",
+    "translation": "Kategorijos"
+  },
+  {
+    "id": "in_out",
+    "translation": "Palyginimas"
+  },
+  {
+    "id": "general_journal",
+    "translation": "Pilnas žurnalas"
+  },
+  {
+    "id": "copyright",
+    "translation": "Autorinės teisės"
+  },
+  {
+    "id": "privacy_policy",
+    "translation": "Privatumo politika"
+  }
+]

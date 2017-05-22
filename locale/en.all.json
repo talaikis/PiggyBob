@@ -1,0 +1,103 @@
+[
+  {
+    "id": "index_page_title",
+    "translation": "Simple Personal Finance Tracker"
+  },
+  {
+    "id": "not_found",
+    "translation": "404 Not Found"
+  },
+  {
+    "id": "not_found_message",
+    "translation": "The requested address not found"
+  },
+  {
+    "id": "accounts",
+    "translation": "Account"
+  },
+
+  {
+    "id": "add_income",
+    "translation": "Add Income"
+  },
+
+  {
+    "id": "add_expense",
+    "translation": "Add Expense"
+  },
+  {
+    "id": "journal",
+    "translation": "Journal"
+  },
+  {
+    "id": "reports",
+    "translation": "Reports"
+  },
+  {
+    "id": "about",
+    "translation": "About"
+  },
+  {
+    "id": "balance_sheet",
+    "translation": "Balance Sheet"
+  },
+  {
+    "id": "timeline",
+    "translation": "Timeline"
+  },
+  {
+    "id": "by_category",
+    "translation": "By Category"
+  },
+  {
+    "id": "in_out",
+    "translation": "In vs Out"
+  },
+  {
+    "id": "general_journal",
+    "translation": "General Journal"
+  },
+  {
+    "id": "copyright",
+    "translation": "Copyright"
+  },
+  {
+    "id": "privacy_policy",
+    "translation": "Privacy Policy"
+  },
+  {
+    "id": "privacy",
+    "translation": "Privacy"
+  },
+  {
+    "id": "languages",
+    "translation": "Languages"
+  },
+  {
+    "id": "about_header",
+    "translation": "History of PiggyBob"
+  },
+  {
+    "id": "about_3",
+    "translation": "In 2016 we, at Quantrade Ltd. decided turning this once great, but abandoned program into a web-based app. We left basic functions, added transfer between accounts, general ledger, dropped time management, and here, now you can easily manage yoru finances from anywhere in the world and for free."
+  },
+  {
+    "id": "about_1",
+    "translation": "PiggyBob was created in 2006 by Nakagava Ltd. out of the need to abstract unnecessary complexities created by so many companies who have nothing else to do."
+  },
+  {
+    "id": "about_2",
+    "translation": "It was a downloadable Windows program and had just few functions, like incomke and expense management, time management and report generation."
+  },
+  {
+    "id": "server_error",
+    "translation": "500 Server Error"
+  }
+  ,
+  {
+    "id": "members_area",
+    "translation": "Members Area"
+  }
+
+
+]
