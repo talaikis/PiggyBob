@@ -1,12 +1,12 @@
 package middleware
 
 import (
-  "os"
-  "sort"
-  "log"
-  "strings"
-  "net/http"
-  "github.com/nicksnyder/go-i18n/i18n"
+	"github.com/nicksnyder/go-i18n/i18n"
+	"log"
+	"net/http"
+	"os"
+	"sort"
+	"strings"
 )
 
 var defaultLang = "en"
@@ -23,7 +23,7 @@ func Translate(w http.ResponseWriter, r *http.Request) (string, i18n.TranslateFu
 	i18n.MustLoadTranslationFile("locale/" + lang + ".all.json")
 	T, err := i18n.Tfunc(lang)
 	if err != nil {
-    log.Fatal("Error loading translation file ", err.Error())
+		log.Fatal("Error loading translation file ", err.Error())
 	}
 
 	translations := map[string]string{
@@ -98,5 +98,5 @@ func Social() *ProviderIndex {
 
 	var providerIndex = &ProviderIndex{Providers: provider_keys, ProvidersMap: providers}
 
-  return providerIndex
+	return providerIndex
 }
