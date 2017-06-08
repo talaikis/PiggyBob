@@ -1,18 +1,14 @@
 package main
 
 import (
-	//"./secure"
 	"github.com/gorilla/mux"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"time"
-	//"./session"
 	"fmt"
 	//"github.com/gin-contrib/gzip"
-	"./config"
 	"./database"
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
@@ -22,18 +18,20 @@ import (
 	"github.com/markbates/goth/providers/gplus"
 	"github.com/markbates/goth/providers/linkedin"
 	"github.com/markbates/goth/providers/twitter"
-	"github.com/nicksnyder/go-i18n/i18n"
 	"./middleware"
 )
 
 var defaultLang = "en"
 var store = sessions.NewCookieStore([]byte(os.Getenv("PIG_APP_KEY")), []byte(os.Getenv("PIG_PIG_ENCRYPT_KEY")))
+var tpl *template.Template
 
 func init() {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading environment variables.")
 	}
+
+	tpl = template.Must(template.ParseGlob("static/html/*.html"))
 
 	gothic.Store = store
 }
@@ -83,28 +81,13 @@ func main() {
 	}
 
 	server := &http.Server{
-		Handler:      app,
-		Addr:         os.Getenv("PIG_HOST"),
+		Handler: app,
+		Addr: os.Getenv("PIG_HOST"),
 		WriteTimeout: 15 * time.Second,
-		ReadTimeout:  15 * time.Second,
+		ReadTimeout: 15 * time.Second,
 	}
 
 	log.Fatal(server.ListenAndServe())
-}
-
-// *****************************************************************************
-//	HANDLER GLOBS
-// *****************************************************************************
-
-type PageStruct struct {
-	T           i18n.TranslateFunc
-	PageTitle   string
-	HeaderTitle string
-	SiteTitle   string
-	CurrentLang string
-	L           *config.LangStruct
-	P           *config.ProviderIndex
-	Strings     map[string]string
 }
 
 // *****************************************************************************
@@ -121,7 +104,7 @@ func MemberAreaHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/lang/" + lang + "/", 302)
 	}
 
-	db, _ := database.Connect().Acquire()
+	/*db, _ := database.Connect().Acquire()
 	defer database.Connect().Release(db)
 
 	// FIXME parse rows
@@ -130,9 +113,9 @@ func MemberAreaHandler(w http.ResponseWriter, r *http.Request) {
 	if e != nil {
 		fmt.Fprintln(w, e)
 		return
-	}
+	}*/
 
-	for rows.Next() {
+	/*for rows.Next() {
 		var provider string
 		var name string
 		var email string
@@ -142,25 +125,23 @@ func MemberAreaHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return err
 		}
-	}
+	}*/
 
-	translations["Provider"] = provider
+	/*translations["Provider"] = provider
 	translations["Name"] = string(rows[1])
 	translations["Email"] = string(rows[2])
-	translations["AvatarUrl"] = string(rows[3])
+	translations["AvatarUrl"] = string(rows[3])*/
 
-	t, _ := template.ParseFiles("static/html/member_area.html", "static/html/footer.html", "static/html/header.html", "static/html/user.html")
-
-	err = t.Execute(w, PageStruct{
-		PageTitle:   T("members_area"),
+	err := tpl.ExecuteTemplate(w, "member_area.html", middleware.PageStruct{
+		PageTitle: T("members_area"),
 		CurrentLang: lang,
 		HeaderTitle: T("members_area"),
-		SiteTitle:   " | " + os.Getenv("PIG_SITE_TITLE"),
-		L:           config.Languages(),
-		P:           config.Social(),
-		Strings:     translations})
+		SiteTitle: " | " + os.Getenv("PIG_SITE_TITLE"),
+		L: middleware.Languages(),
+		P: middleware.Social(),
+		Strings: translations})
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Fatal(err)
 	}
 }
 
@@ -236,23 +217,21 @@ func ProviderHandler(w http.ResponseWriter, r *http.Request) {
 // 500
 // *****************************************************************************
 
-func ServerError(w http.ResponseWriter, r *http.Request, err ...string) {
+func ServerError(w http.ResponseWriter, r *http.Request, err string) {
 	w.Header().Set("Content-Type", "text/html")
-	_, T, translations := middleware.Translate(w, r)
-
+	lang, T, translations := middleware.Translate(w, r)
 	translations["Error"] = err
 
-	t, _ := template.ParseFiles("static/html/error.html", "static/html/footer.html", "static/html/header.html", "static/html/user.html")
-	e := t.Execute(w, PageStruct{
-		PageTitle:   T("server_error"),
+	e := tpl.ExecuteTemplate(w, "error.html", middleware.PageStruct{
+		PageTitle: T("server_error"),
 		CurrentLang: lang,
 		HeaderTitle: T("server_error"),
-		SiteTitle:   " | " + os.Getenv("PIG_SITE_TITLE"),
-		L:           config.Languages(),
-		P:           config.Social(),
-		Strings:     translations})
+		SiteTitle: " | " + os.Getenv("PIG_SITE_TITLE"),
+		L: middleware.Languages(),
+		P: middleware.Social(),
+		Strings: translations})
 	if e != nil {
-		fmt.Println(err.Error())
+		log.Fatal(err)
 	}
 }
 
@@ -265,17 +244,16 @@ func NotFound(w http.ResponseWriter, r *http.Request) {
 	// FIXME it not always can know the lang, get a session lang
 	lang, T, translations := middleware.Translate(w, r)
 
-	t, _ := template.ParseFiles("static/html/error.html", "static/html/footer.html", "static/html/header.html", "static/html/user.html")
-	err = t.Execute(w, PageStruct{
-		PageTitle:   T("not_found"),
+	err := tpl.ExecuteTemplate(w, "error.html", middleware.PageStruct{
+		PageTitle: T("not_found"),
 		CurrentLang: lang,
 		HeaderTitle: T("not_found"),
-		SiteTitle:   " | " + os.Getenv("PIG_SITE_TITLE"),
-		L:           config.Languages(),
-		P:           config.Social(),
-		Strings:     translations})
+		SiteTitle: " | " + os.Getenv("PIG_SITE_TITLE"),
+		L: middleware.Languages(),
+		P: middleware.Social(),
+		Strings: translations})
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Fatal(err)
 	}
 }
 
@@ -291,18 +269,16 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	session.Values["lang"] = lang
 	session.Save(r, w)
 
-	t, _ := template.ParseFiles("static/html/index.html", "static/html/footer.html", "static/html/header.html", "static/html/user.html")
-
-	err = t.Execute(w, PageStruct{
-		PageTitle:   T("index_page_title"),
+	err := tpl.ExecuteTemplate(w, "index.html", middleware.PageStruct{
+		PageTitle: T("index_page_title"),
 		CurrentLang: lang,
 		HeaderTitle: T("index_page_title"),
-		SiteTitle:   " | " + os.Getenv("PIG_SITE_TITLE"),
-		L:           config.Languages(),
-		P:           config.Social(),
-		Strings:     translations})
+		SiteTitle: " | " + os.Getenv("PIG_SITE_TITLE"),
+		L: middleware.Languages(),
+		P: middleware.Social(),
+		Strings: translations})
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Fatal(err)
 	}
 }
 
@@ -314,18 +290,16 @@ func PrivacyHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	lang, T, translations := middleware.Translate(w, r)
 
-	t, _ := template.ParseFiles("static/html/privacy.html", "static/html/footer.html", "static/html/header.html", "static/html/user.html")
-
-	err = t.Execute(w, PageStruct{
-		PageTitle:   T("privacy_policy"),
+	err := tpl.ExecuteTemplate(w, "privacy.html", middleware.PageStruct{
+		PageTitle: T("privacy_policy"),
 		CurrentLang: lang,
 		HeaderTitle: T("privacy_policy"),
-		SiteTitle:   " | " + os.Getenv("PIG_SITE_TITLE"),
-		L:           config.Languages(),
-		P:           config.Social(),
-		Strings:     translations})
+		SiteTitle: " | " + os.Getenv("PIG_SITE_TITLE"),
+		L: middleware.Languages(),
+		P: middleware.Social(),
+		Strings: translations})
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Fatal(err)
 	}
 }
 
@@ -337,17 +311,16 @@ func AboutHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	lang, T, translations := middleware.Translate(w, r)
 
-	t, _ := template.ParseFiles("static/html/about.html", "static/html/footer.html", "static/html/header.html", "static/html/user.html")
-	err = t.Execute(w, PageStruct{
-		PageTitle:   T("about_header"),
+	err := tpl.ExecuteTemplate(w, "about.html", middleware.PageStruct{
+		PageTitle: T("about_header"),
 		CurrentLang: lang,
 		HeaderTitle: T("about_header"),
-		SiteTitle:   " | " + os.Getenv("PIG_SITE_TITLE"),
-		L:           config.Languages(),
-		P:           config.Social(),
-		Strings:     translations})
+		SiteTitle: " | " + os.Getenv("PIG_SITE_TITLE"),
+		L: middleware.Languages(),
+		P: middleware.Social(),
+		Strings: translations})
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Fatal(err)
 	}
 }
 
