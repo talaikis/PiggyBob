@@ -1,29 +1,19 @@
 package database
 
 import (
-	"fmt"
-	"github.com/jackc/pgx"
 	"os"
+	"database/sql"
+	_ "github.com/lib/pq"
 )
 
-type error interface {
-	Error() string
-}
-
-func Connect() *pgx.ConnPool {
-	connConfig := pgx.ConnConfig{
-		Host:     os.Getenv("DATABASE_HOST"),
-		User:     os.Getenv("DATABASE_USERNAME"),
-		Password: os.Getenv("DATABASE_PASSWORD"),
-		Database: os.Getenv("DATABASE_NAME")}
-
-	db, err := pgx.NewConnPool(pgx.ConnPoolConfig{
-		ConnConfig:     connConfig,
-		MaxConnections: 100})
-
+func Connect() *sql.DB {
+	db, err := sql.Open("postgres", "user=" + os.Getenv("DATABASE_USERNAME") +
+		" password='" + os.Getenv("DATABASE_PASSWORD") +
+		"' host=" + os.Getenv("DATABASE_HOST") +
+		" port=5432 dbname=" + os.Getenv("DATABASE_NAME")  + " sslmode=disable")
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
-		os.Exit(1)
+		panic(err)
 	}
+
 	return db
 }

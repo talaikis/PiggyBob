@@ -1,16 +1,15 @@
 package main
 
 import (
-	"fmt"
 	"github.com/gorilla/mux"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
 	"time"
+	"fmt"
 	//"github.com/gin-contrib/gzip"
 	"./database"
-	"./middleware"
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
 	"github.com/markbates/goth"
@@ -19,10 +18,11 @@ import (
 	"github.com/markbates/goth/providers/gplus"
 	"github.com/markbates/goth/providers/linkedin"
 	"github.com/markbates/goth/providers/twitter"
+	"./middleware"
 )
 
 var defaultLang = "en"
-var store = sessions.NewCookieStore([]byte(os.Getenv("PIG_APP_KEY")), []byte(os.Getenv("PIG_PIG_ENCRYPT_KEY")))
+var store = sessions.NewCookieStore([]byte(os.Getenv("APP_KEY")))
 var tpl *template.Template
 
 func init() {
@@ -38,10 +38,10 @@ func init() {
 
 func main() {
 	goth.UseProviders(
-		twitter.New(os.Getenv("PIG_TWITTER_KEY"), os.Getenv("PIG_TWITTER_SECRET"), os.Getenv("PIG_OAUTH_HOST")+"/auth/twitter/callback"),
-		facebook.New(os.Getenv("PIG_FACEBOOK_KEY"), os.Getenv("PIG_FACEBOOK_SECRET"), os.Getenv("PIG_OAUTH_HOST")+"/auth/facebook/callback"),
-		gplus.New(os.Getenv("PIG_GPLUS_KEY"), os.Getenv("PIG_GPLUS_SECRET"), os.Getenv("PIG_OAUTH_HOST")+"/auth/gplus/callback"),
-		linkedin.New(os.Getenv("PIG_LINKEDIN_KEY"), os.Getenv("PIG_LINKEDIN_SECRET"), os.Getenv("PIG_OAUTH_HOST")+"/auth/linkedin/callback"),
+		twitter.New(os.Getenv("TWITTER_KEY"), os.Getenv("TWITTER_SECRET"), os.Getenv("OAUTH_HOST")+"/auth/twitter/callback"),
+		facebook.New(os.Getenv("FACEBOOK_KEY"), os.Getenv("FACEBOOK_SECRET"), os.Getenv("OAUTH_HOST")+"/auth/facebook/callback"),
+		gplus.New(os.Getenv("GPLUS_KEY"), os.Getenv("GPLUS_SECRET"), os.Getenv("OAUTH_HOST")+"/auth/gplus/callback"),
+		linkedin.New(os.Getenv("LINKEDIN_KEY"), os.Getenv("LINKEDIN_SECRET"), os.Getenv("OAUTH_HOST")+"/auth/linkedin/callback"),
 	)
 
 	// *****************************************************************************
@@ -81,10 +81,10 @@ func main() {
 	}
 
 	server := &http.Server{
-		Handler:      app,
-		Addr:         os.Getenv("PIG_HOST"),
+		Handler: app,
+		Addr: os.Getenv("HOST"),
 		WriteTimeout: 15 * time.Second,
-		ReadTimeout:  15 * time.Second,
+		ReadTimeout: 15 * time.Second,
 	}
 
 	log.Fatal(server.ListenAndServe())
@@ -94,6 +94,13 @@ func main() {
 //	MEMBER AREA
 //*****************************************************************************
 
+type User struct {
+	provider string
+  name string
+  email string
+  avatar_url string
+}
+
 func MemberAreaHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	lang, T, translations := middleware.Translate(w, r)
@@ -101,45 +108,50 @@ func MemberAreaHandler(w http.ResponseWriter, r *http.Request) {
 	session, _ := store.Get(r, "_sess_")
 	email := session.Values["email"]
 	if email == nil {
-		http.Redirect(w, r, "/lang/"+lang+"/", 302)
+		http.Redirect(w, r, "/lang/" + lang + "/", 302)
 	}
 
-	/*db, _ := database.Connect().Acquire()
-	defer database.Connect().Release(db)
+	db := database.Connect()
+	defer db.Close()
 
-	// FIXME parse rows
-	query := fmt.Sprintf(`SELECT provider, name, email, avatar_url FROM users WHERE email='%s'`, email)
-	rows, e := db.Exec(query)
-	if e != nil {
-		fmt.Fprintln(w, e)
-		return
-	}*/
+	query := fmt.Sprintf(`SELECT provider, name, email, avatar_url FROM users WHERE email='%s';`, email)
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
 
-	/*for rows.Next() {
-		var provider string
-		var name string
-		var email string
-		var avatar_url string
-
-		err := rows.Scan(&provider, &name, &email, &avatar_url)
+	users := make([]User, 0)
+	for rows.Next() {
+		user := User{}
+		err := rows.Scan(&user.provider, &user.name, &user.email, &user.avatar_url)
 		if err != nil {
-			return err
+			panic(err)
 		}
-	}*/
+		users = append(users, user)
+	}
+	if err = rows.Err(); err != nil {
+		panic(err)
+	}
+
+	for _, user := range users {
+		// fmt.Println(bk.isbn, bk.title, bk.author, bk.price)
+		fmt.Printf("%s, %s, %s, %s", user.provider, user.name, user.email, user.avatar_url)
+	}
 
 	/*translations["Provider"] = provider
 	translations["Name"] = string(rows[1])
 	translations["Email"] = string(rows[2])
 	translations["AvatarUrl"] = string(rows[3])*/
 
-	err := tpl.ExecuteTemplate(w, "member_area.html", middleware.PageStruct{
-		PageTitle:   T("members_area"),
+	err = tpl.ExecuteTemplate(w, "member_area.html", middleware.PageStruct{
+		PageTitle: T("members_area"),
 		CurrentLang: lang,
 		HeaderTitle: T("members_area"),
-		SiteTitle:   " | " + os.Getenv("PIG_SITE_TITLE"),
-		L:           middleware.Languages(),
-		P:           middleware.Social(),
-		Strings:     translations})
+		SiteTitle: " | " + os.Getenv("SITE_TITLE"),
+		L: middleware.Languages(),
+		P: middleware.Social(),
+		Strings: translations})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -160,8 +172,8 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	session.Values["email"] = user.Email
 	session.Save(r, w)
 
-	db, _ := database.Connect().Acquire()
-	defer database.Connect().Release(db)
+	db := database.Connect()
+	defer db.Close()
 
 	cols := "provider, email, name, first_name, last_name, nickname, description, user_id, avatar_url, location, access_token, access_token_secret, refresh_token"
 	query := fmt.Sprintf(`INSERT into users (%s) VALUES ('%s', '%s', '%s', '%s',
@@ -207,7 +219,7 @@ func ProviderHandler(w http.ResponseWriter, r *http.Request) {
 		if lang == nil {
 			lang = defaultLang
 		}
-		http.Redirect(w, r, "/lang/"+lang.(string)+"/member_area/", 302)
+		http.Redirect(w, r, "/lang/" + lang.(string) + "/member_area/", 302)
 	} else {
 		gothic.BeginAuthHandler(w, r)
 	}
@@ -223,13 +235,13 @@ func ServerError(w http.ResponseWriter, r *http.Request, err string) {
 	translations["Error"] = err
 
 	e := tpl.ExecuteTemplate(w, "error.html", middleware.PageStruct{
-		PageTitle:   T("server_error"),
+		PageTitle: T("server_error"),
 		CurrentLang: lang,
 		HeaderTitle: T("server_error"),
-		SiteTitle:   " | " + os.Getenv("PIG_SITE_TITLE"),
-		L:           middleware.Languages(),
-		P:           middleware.Social(),
-		Strings:     translations})
+		SiteTitle: " | " + os.Getenv("SITE_TITLE"),
+		L: middleware.Languages(),
+		P: middleware.Social(),
+		Strings: translations})
 	if e != nil {
 		log.Fatal(err)
 	}
@@ -245,13 +257,13 @@ func NotFound(w http.ResponseWriter, r *http.Request) {
 	lang, T, translations := middleware.Translate(w, r)
 
 	err := tpl.ExecuteTemplate(w, "error.html", middleware.PageStruct{
-		PageTitle:   T("not_found"),
+		PageTitle: T("not_found"),
 		CurrentLang: lang,
 		HeaderTitle: T("not_found"),
-		SiteTitle:   " | " + os.Getenv("PIG_SITE_TITLE"),
-		L:           middleware.Languages(),
-		P:           middleware.Social(),
-		Strings:     translations})
+		SiteTitle: " | " + os.Getenv("SITE_TITLE"),
+		L: middleware.Languages(),
+		P: middleware.Social(),
+		Strings: translations})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -270,13 +282,13 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	session.Save(r, w)
 
 	err := tpl.ExecuteTemplate(w, "index.html", middleware.PageStruct{
-		PageTitle:   T("index_page_title"),
+		PageTitle: T("index_page_title"),
 		CurrentLang: lang,
 		HeaderTitle: T("index_page_title"),
-		SiteTitle:   " | " + os.Getenv("PIG_SITE_TITLE"),
-		L:           middleware.Languages(),
-		P:           middleware.Social(),
-		Strings:     translations})
+		SiteTitle: " | " + os.Getenv("SITE_TITLE"),
+		L: middleware.Languages(),
+		P: middleware.Social(),
+		Strings: translations})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -291,13 +303,13 @@ func PrivacyHandler(w http.ResponseWriter, r *http.Request) {
 	lang, T, translations := middleware.Translate(w, r)
 
 	err := tpl.ExecuteTemplate(w, "privacy.html", middleware.PageStruct{
-		PageTitle:   T("privacy_policy"),
+		PageTitle: T("privacy_policy"),
 		CurrentLang: lang,
 		HeaderTitle: T("privacy_policy"),
-		SiteTitle:   " | " + os.Getenv("PIG_SITE_TITLE"),
-		L:           middleware.Languages(),
-		P:           middleware.Social(),
-		Strings:     translations})
+		SiteTitle: " | " + os.Getenv("SITE_TITLE"),
+		L: middleware.Languages(),
+		P: middleware.Social(),
+		Strings: translations})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -312,13 +324,13 @@ func AboutHandler(w http.ResponseWriter, r *http.Request) {
 	lang, T, translations := middleware.Translate(w, r)
 
 	err := tpl.ExecuteTemplate(w, "about.html", middleware.PageStruct{
-		PageTitle:   T("about_header"),
+		PageTitle: T("about_header"),
 		CurrentLang: lang,
 		HeaderTitle: T("about_header"),
-		SiteTitle:   " | " + os.Getenv("PIG_SITE_TITLE"),
-		L:           middleware.Languages(),
-		P:           middleware.Social(),
-		Strings:     translations})
+		SiteTitle: " | " + os.Getenv("SITE_TITLE"),
+		L: middleware.Languages(),
+		P: middleware.Social(),
+		Strings: translations})
 	if err != nil {
 		log.Fatal(err)
 	}

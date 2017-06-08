@@ -16,8 +16,7 @@ func PopulateIncomeCategoryValues() {
 		{"Title": "Other", "Description": "Other income."},
 	}
 
-	db, _ := Connect().Acquire()
-	defer Connect().Release(db)
+	db := Connect()
 
 	for _, val := range data {
 		_, err := db.Exec(fmt.Sprintf("INSERT INTO income_category(title, description) VALUES('%s', '%s')", val["Title"], val["Description"]))
@@ -43,8 +42,7 @@ func PopulateExpenseCategoryValues() {
 		{"Title": "Taxes", "Description": "Taxes."},
 	}
 
-	db, _ := Connect().Acquire()
-	defer Connect().Release(db)
+	db := Connect()
 
 	for _, val := range data {
 		_, err := db.Exec(fmt.Sprintf("INSERT INTO expense_category(title, description) VALUES('%s', '%s')", val["Title"], val["Description"]))
@@ -77,8 +75,7 @@ func PopulateCurrencyValues() {
 		{"Title": "USD", "Description": "United States dollar"},
 	}
 
-	db, _ := Connect().Acquire()
-	defer Connect().Release(db)
+	db := Connect()
 
 	for _, val := range data {
 		_, err := db.Exec(fmt.Sprintf("INSERT INTO currency(title, description) VALUES('%s', '%s')", val["Title"], val["Description"]))
@@ -89,8 +86,7 @@ func PopulateCurrencyValues() {
 }
 
 func CreateTables() {
-	db, _ := Connect().Acquire()
-	defer Connect().Release(db)
+	db := Connect()
 
 	contents, err := ioutil.ReadFile("database/schema.sql")
 	if err != nil {
@@ -104,4 +100,11 @@ func CreateTables() {
 		fmt.Println("Failed with query. ", dbErr)
 	}
 
+}
+
+type User struct {
+	provider string
+  name string
+  email string
+  avatar_url string
 }

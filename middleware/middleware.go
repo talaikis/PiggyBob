@@ -40,7 +40,7 @@ func Translate(w http.ResponseWriter, r *http.Request) (string, i18n.TranslateFu
 		"GeneralJournal": T("general_journal"),
 		"Copyright":      T("copyright"),
 		"Privacy":        T("privacy"),
-		"BaseUrl":        os.Getenv("PIG_BASE_URL")}
+		"BaseUrl":        os.Getenv("BASE_URL")}
 	return lang, T, translations
 }
 
